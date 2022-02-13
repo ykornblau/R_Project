@@ -1,0 +1,102 @@
+---
+title: "R Project"
+author: 'Yoni Kornblau'
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(shiny)
+library(tidyverse)
+data = read.csv('Medicare_Inpatient_Hospital_by_Provider_and_Service_2019.csv')
+head(data)
+```
+Cleaning the data: 
+```{r}
+better_data =data %>% 
+  rename(
+    CCN = ï..Rndrng_Prvdr_CCN,
+    Name = Rndrng_Prvdr_Org_Name,
+    City = Rndrng_Prvdr_City,
+    State = Rndrng_Prvdr_State_Abrvtn,
+    Address = Rndrng_Prvdr_St,
+    FIPS = Rndrng_Prvdr_State_FIPS,
+    Zip_code = Rndrng_Prvdr_Zip5,
+    RUCA = Rndrng_Prvdr_RUCA,
+    RUCA_desc = Rndrng_Prvdr_RUCA_Desc,
+    Diagnosis_code = DRG_Cd,
+    Diagnosis_desc = DRG_Desc
+    )
+```
+
+```{r}
+summary(better_data)
+better_data$Avg_Submtd_Cvrd_Chrg=str_sub(better_data$Avg_Submtd_Cvrd_Chrg,2)
+better_data$Avg_Submtd_Cvrd_Chrg = as.numeric(sub(',','',better_data$Avg_Submtd_Cvrd_Chrg))
+better_data$Avg_Tot_Pymt_Amt=str_sub(better_data$Avg_Tot_Pymt_Amt,2)
+better_data$Avg_Tot_Pymt_Amt = as.numeric(sub(',','',better_data$Avg_Tot_Pymt_Amt))
+better_data$Avg_Mdcr_Pymt_Amt=str_sub(better_data$Avg_Mdcr_Pymt_Amt,2)
+better_data$Avg_Mdcr_Pymt_Amt = as.numeric(sub(',','',better_data$Avg_Mdcr_Pymt_Amt))
+better_data$Tot_Dschrgs = as.numeric(better_data$Tot_Dschrgs)
+better_data = better_data %>% mutate(Pct_Chrgd_Paid = Avg_Tot_Pymt_Amt/Avg_Submtd_Cvrd_Chrg)
+better_data = better_data %>% mutate(OOP_Amt_Paid = Avg_Tot_Pymt_Amt - Avg_Mdcr_Pymt_Amt)
+head(better_data)
+
+```
+
+
+
+```{r}
+n_distinct(better_data$Name)
+n_distinct(better_data$CCN)
+n_distinct(better_data$Diagnosis_code)
+sum_discharges = better_data$Tot_Dschrgs %>% replace_na(0) %>% as.numeric() %>% sum()
+unique(better_data$Diagnosis_desc) %>% sort()
+n_distinct(better_data$City)
+unique(better_data$RUCA_desc)
+
+```
+```{r}
+
+Tot_pmnt_graph = better_data %>% arrange(desc(Avg_Tot_Pymt_Amt)) %>% pull(Avg_Tot_Pymt_Amt) %>% plot()
+Submtd_cvrd_chrg_graph = better_data %>% arrange(desc(Avg_Submtd_Cvrd_Chrg)) %>% pull(Avg_Submtd_Cvrd_Chrg) %>% plot()
+Mdcr_pmnt_graph = better_data %>% arrange(desc(Avg_Mdcr_Pymt_Amt)) %>% pull(Avg_Mdcr_Pymt_Amt) %>% plot()
+```
+```{r}
+better_data %>% arrange(desc(Avg_Mdcr_Pymt_Amt)) %>% head(1000) %>% ggplot(aes(x=Avg_Mdcr_Pymt_Amt,))+geom_bar()
+```
+Create column of amt_patient_paid = total_payment - medicare_payment
+Create column percent of charge_paid= charged amt/ total_payment
+if time: create column where all the cc/mcc is removed
+```{r}
+better_data %>% mutate(Pct_chrgd_paid = Avg_Tot_Pymt_Amt/Avg_Submtd_Cvrd_Chrg)
+better_data %>% mutate(OOP_amt_paid = Avg_Tot_Pymt_Amt - Avg_Mdcr_Pymt_Amt)
+better_data %>% mutate(Diagnosis_desc = )
+```
+
+
+Graphs to make:
+1. Top most costly procedures by charged_amt / least costly
+2. Does amt_patient_paid/total_payment change based off type of procedure / hospital
+3. Graph location of hospitals on US map with coloring of RUCA codes
+4. Hospital by number of patients
+5. procedure by total number of patients
+6. Graph with all payment types overlaid
+7. glm for predicting price of procedure using zip code, hospital, procedure type
+8. Does percent of charge paid vary by procedure/hospital?
+
+
+
+```{r}
+plot(world)
+```
+```{r}
+library(zipcodeR)
+zips = geocode_zip(better_data$Zip_code) %>% drop_na()
+us = map_data('state')
+ggplot(zips, aes(y = lat,x = lng)) + geom_polygon(data= us, aes(x=long,y=lat), color='blue',fill=NA,alpha=.35)+
+  geom_point(size=.15,alpha=.25) +
+  xlim(-125,-65)+ylim(20,50)
+
+```
+

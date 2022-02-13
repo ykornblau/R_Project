@@ -1,0 +1,51 @@
+---
+title: "R Project"
+author: 'Yoni Kornblau'
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(shiny)
+library(tidyverse)
+data = fread('Medicare_Inpatient_Hospital_by_Provider_and_Service_2019.csv')
+head(data)
+```
+Cleaning the data: 
+```{r}
+better_data =data %>% 
+  rename(
+    CCN = Rndrng_Prvdr_CCN,
+    Name = Rndrng_Prvdr_Org_Name,
+    City = Rndrng_Prvdr_City,
+    State = Rndrng_Prvdr_State_Abrvtn,
+    Address = Rndrng_Prvdr_St,
+    FIPS = Rndrng_Prvdr_State_FIPS,
+    Zip_code = Rndrng_Prvdr_Zip5,
+    RUCA = Rndrng_Prvdr_RUCA,
+    RUCA_desc = Rndrng_Prvdr_RUCA_Desc,
+    Diagnosis_code = DRG_Cd,
+    Diagnosis_desc = DRG_Desc
+    )
+```
+
+```{r}
+summary(better_data)
+better_data$Avg_Submtd_Cvrd_Chrg=str_sub(better_data$Avg_Submtd_Cvrd_Chrg,2)
+better_data$Avg_Submtd_Cvrd_Chrg = as.numeric(sub(',','',better_data$Avg_Submtd_Cvrd_Chrg))
+better_data$Avg_Tot_Pymt_Amt=str_sub(better_data$Avg_Tot_Pymt_Amt,2)
+better_data$Avg_Tot_Pymt_Amt = as.numeric(sub(',','',better_data$Avg_Tot_Pymt_Amt))
+better_data$Avg_Mdcr_Pymt_Amt=str_sub(better_data$Avg_Mdcr_Pymt_Amt,2)
+better_data$Avg_Mdcr_Pymt_Amt = as.numeric(sub(',','',better_data$Avg_Mdcr_Pymt_Amt))
+better_data$Tot_Dschrgs = as.numeric(better_data$Tot_Dschrgs)
+head(better_data)
+
+```
+```{r}
+n_distinct(better_data$Name)
+n_distinct(better_data$CCN)
+n_distinct(better_data$Diagnosis_code)
+
+sum_discharges = better_data$Tot_Dschrgs %>% replace_na(0) %>% as.numeric() %>% sum()
+```
+
