@@ -54,6 +54,7 @@ sum_discharges = better_data$Tot_Dschrgs %>% replace_na(0) %>% as.numeric() %>% 
 unique(better_data$Diagnosis_desc) %>% sort()
 n_distinct(better_data$City)
 unique(better_data$RUCA_desc)
+ sum_discharges
 
 ```
 ```{r}
@@ -88,15 +89,35 @@ Graphs to make:
 
 
 ```{r}
-plot(world)
+avg_pct_paid = sum(na.omit(better_data$Tot_Dschrgs * better_data$Pct_Chrgd_Paid))/ sum(na.omit(better_data$Tot_Dschrgs))
+pct_paid_by_diag =  better_data %>% group_by(Diagnosis_desc) %>% summarize(mean(Pct_Chrgd_Paid))
+pct_paid_by_diag = rename(pct_paid_by_diag, pcnt_paid = `mean(Pct_Chrgd_Paid)`) 
+arrange(pct_paid_by_diag, desc(pcnt_paid))
+
+arrange(better_data, OOP_Amt_Paid)
+better_data %>% ggplot(aes(Avg_Mdcr_Pymt_Amt,OOP_Amt_Paid)) +geom_point()
 ```
+```{r}
+
+```
+
 ```{r}
 library(zipcodeR)
 zips = geocode_zip(better_data$Zip_code) %>% drop_na()
 us = map_data('state')
-ggplot(zips, aes(y = lat,x = lng)) + geom_polygon(data= us, aes(x=long,y=lat), color='blue',fill=NA,alpha=.35)+
+ggplot(data= us, aes(x=long,y=lat)) + geom_polygon(zips, aes(y = lat,x = lng), color='blue',fill=NA,alpha=.35)+
   geom_point(size=.15,alpha=.25) +
   xlim(-125,-65)+ylim(20,50)
+```
+
+```{r}
+Tot_ppl_by_diagnosis = better_data %>% group_by(Diagnosis_desc) %>% summarize(sum(Tot_Dschrgs)) %>% head(10)
+Tot_ppl_by_diagnosis
+ggplot(data = Tot_ppl_by_diagnosis, aes(x = Diagnosis_desc, y = `sum(Tot_Dschrgs)`)) + geom_col() +labs(title = 'Most common Diagnoses', x= 'Diagnosis Description', y = 'Total Discharges')
+
+ggplot(data = Tot_ppl_by_diagnosis, aes(x = Diagnosis_desc, y = `sum(Tot_Dschrgs)`))  + geom_col()
+```
+```{r}
 
 ```
 
